@@ -1,0 +1,78 @@
+
+name: CI
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+      - name: Checkstyle
+        run: mvn -B checkstyle:check
+
+  tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    env:
+      TESTS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'phase:tests') }}
+      FIX_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'phase:fix') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Check phase label
+        if: github.event_name == 'pull_request'
+        run: |
+          if [ "$TESTS_LABEL" = "$FIX_LABEL" ]; then
+            echo "::error::PR needs exactly one of phase:tests or phase:fix"
+            exit 1
+          fi
+
+      - name: Run tests
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "push" ] || [ "$TESTS_LABEL" = "true" ]; then
+            mvn -B -Dmaven.test.failure.ignore=true test
+          else
+            mvn -B test
+          fi
+
+      - name: JUnit results
+        if: always() && github.event_name == 'pull_request' && hashFiles('target/surefire-reports/TEST-*.xml') != ''
+        continue-on-error: true
+        uses: mikepenz/action-junit-report@v6
+        with:
+          report_paths: target/surefire-reports/TEST-*.xml
+          check_name: JUnit results
+          comment: true
+          fail_on_failure: false
+
+      - name: Coverage report
+        if: always() && github.event_name == 'pull_request' && hashFiles('target/site/jacoco/jacoco.xml') != ''
+        continue-on-error: true
+        uses: madrapps/jacoco-report@v1.8.0
+        with:
+          paths: target/site/jacoco/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: Code coverage
+          update-comment: true
+          min-coverage-overall: 0
+          min-coverage-changed-lines: 0
