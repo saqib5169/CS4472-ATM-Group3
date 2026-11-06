@@ -1,4 +1,6 @@
-# Assignment 1 — Deposit fee testing
+# Assignment 1 
+
+## Deposit fee testing
 
 **Target:** `bank.utils.FeesCalculator.calculateDepositInterest(double amount, double accountBalance, boolean student)`  
 **Technique:** Weak Robust Equivalence Class Analysis (ECA)  
