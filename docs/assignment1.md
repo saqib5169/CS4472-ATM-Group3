@@ -204,11 +204,8 @@ The separate `deposit-failure-log.md` lists the grouped suspected defects and fa
 * **Class & Method:** `bank.utils.FeesCalculator.calculateWithdrawalFee`
 * **Statement:** `else if (accountBalance < 10000.00) { feePercentage = 0.001; }`
 * **Justification:** The code incorrectly sets the upper boundary for the 0.1% fee tier at $10,000 instead of $5,000, causing balances of $5,000 and above to be charged when they should have no fee.
-# Assignment 1 Test Cases
 
-Inside this document are the session testing records
-
-## Session testing
+## Session testing - Test Cases
 
 ### Technique and assumptions
 
